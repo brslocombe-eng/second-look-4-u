@@ -1,0 +1,9 @@
+{
+  "name": "Second Look 4 U",
+  "short_name": "Second Look 4 U",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#111418",
+  "theme_color": "#111418",
+  "description": "Challenge the car before you commit."
+}
