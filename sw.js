@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v5';
+const CACHE = 'second-look-4-u-v6';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -6,7 +6,7 @@ async function appResponse(request) {
   const type = response.headers.get('content-type') || '';
   if (!type.includes('text/html')) return response;
   let html = await response.text();
-  html = html.replace('</style>', 'textarea.note{display:block !important;min-height:72px;resize:vertical;} .note-row{align-items:flex-start;} .voice{min-width:52px;} </style>');
+  html = html.replace('</style>', 'textarea.note{display:block !important;min-height:72px;resize:vertical;} .note-row{align-items:flex-start;} .voice{min-width:52px;} .check{scroll-margin-top:92px;} </style>');
   const voiceFix = `<script>
 function setupVoiceNotes(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -53,6 +53,21 @@ function setupVoiceNotes(){
     try { rec.start(); } catch(e) { finish(); status.textContent='Voice input could not be started. Try again or use the keyboard microphone.'; }
   });
 }
+function setupAutoAdvance(){
+  document.addEventListener('click', event => {
+    const choice = event.target.closest('.choice');
+    if (!choice) return;
+    setTimeout(() => {
+      const current = choice.closest('.check');
+      if (!current) return;
+      const next = current.nextElementSibling;
+      if (next && next.classList.contains('check')) {
+        next.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+    }, 120);
+  }, {passive:true});
+}
+setupAutoAdvance();
 </script>`;
   html = html.replace("render();if('serviceWorker' in navigator)", voiceFix + "render();if('serviceWorker' in navigator)");
   return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
