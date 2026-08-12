@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v6';
+const CACHE = 'second-look-4-u-v7';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -6,7 +6,7 @@ async function appResponse(request) {
   const type = response.headers.get('content-type') || '';
   if (!type.includes('text/html')) return response;
   let html = await response.text();
-  html = html.replace('</style>', 'textarea.note{display:block !important;min-height:72px;resize:vertical;} .note-row{align-items:flex-start;} .voice{min-width:52px;} </style>');
+  html = html.replace('</style>', 'textarea.note{display:block !important;min-height:72px;resize:vertical;} .note-row{align-items:flex-start;} .voice{min-width:52px;} body:has(.launch) .top{display:none;} body:has(.launch) .wrap{padding-bottom:0;} body:has(.launch) .launch{min-height:100vh;align-items:flex-start;padding-top:clamp(72px,12vh,120px);padding-bottom:48px;} body:has(.launch) .app-mark{margin-bottom:20px;} body:has(.launch) .launch-title{font-size:clamp(34px,9vw,43px);margin-bottom:14px;} body:has(.launch) .launch-sub{margin-bottom:24px;} </style>');
   const voiceFix = `<script>
 function setupVoiceNotes(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
