@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v8';
+const CACHE = 'second-look-4-u-v9';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -54,7 +54,35 @@ function setupVoiceNotes(){
   });
 }
 </script>`;
-  html = html.replace("render();if('serviceWorker' in navigator)", voiceFix + "render();if('serviceWorker' in navigator)");
+  const startScreenFix = `<script>
+(function(){
+  const originalStart = window.start;
+  window.start = function(){
+    originalStart();
+    const intro = document.querySelector('.start-intro');
+    const card = document.querySelector('.start-card');
+    if(!intro || !card) return;
+    const small = intro.querySelector('.small');
+    if(small) small.textContent = 'GET READY';
+    const selectWrap = card.querySelector('.select-wrap');
+    if(selectWrap){
+      const label = document.createElement('div');
+      label.className = 'vehicle-prompt';
+      label.textContent = 'Choose your vehicle';
+      card.insertBefore(label, selectWrap);
+    }
+    const title = document.createElement('h1');
+    title.className = 'do-not-start-title';
+    title.textContent = 'Do Not Start Engine';
+    const introEnd = intro.querySelector('.small');
+    introEnd.insertAdjacentElement('afterend', title);
+    const oldIntro = intro.querySelector('.small');
+    if(oldIntro) oldIntro.remove();
+  };
+})();
+</script>`;
+  html = html.replace("render();if('serviceWorker' in navigator)", voiceFix + startScreenFix + "render();if('serviceWorker' in navigator)");
+  html = html.replace('</style>', '.do-not-start-title{font-size:clamp(34px,9vw,43px);line-height:1.05;letter-spacing:-.035em;margin:18px 0 20px;color:var(--txt)}.vehicle-prompt{color:var(--muted);font-size:15px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin:2px 0 10px}</style>');
   return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
 }
 
