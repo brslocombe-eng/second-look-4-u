@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v10';
+const CACHE = 'second-look-4-u-v11';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -59,6 +59,7 @@ function setupVoiceNotes(){
   const originalStart = window.start;
   if(typeof originalStart !== 'function') return;
   window.start = function(){
+    window.__secondLookEngineCold = false;
     originalStart();
     setTimeout(() => {
       const intro = document.querySelector('.start-intro');
@@ -91,6 +92,13 @@ function setupVoiceNotes(){
     const select = card && card.querySelector('.select-wrap select');
     const footerBtn = document.getElementById('next');
     if(!card || !select || !footerBtn) return false;
+    if(!select.dataset.coldReset){
+      select.dataset.coldReset='1';
+      select.addEventListener('change', () => {
+        window.__secondLookEngineCold = false;
+        setTimeout(wireColdStart,0);
+      });
+    }
     let existing = card.querySelector('.cold-start-card');
     if(!existing){
       existing = document.createElement('div');
