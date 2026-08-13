@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v9';
+const CACHE = 'second-look-4-u-v10';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -6,7 +6,7 @@ async function appResponse(request) {
   const type = response.headers.get('content-type') || '';
   if (!type.includes('text/html')) return response;
   let html = await response.text();
-  html = html.replace('</style>', 'textarea.note{display:block !important;min-height:72px;resize:vertical;} .note-row{align-items:flex-start;} .voice{min-width:52px;} body:has(.launch) .top{display:none;} body:has(.launch) .wrap{padding-bottom:0;} body:has(.launch) .launch{min-height:100vh;align-items:flex-start;padding-top:clamp(72px,12vh,120px);padding-bottom:48px;} body:has(.launch) .app-mark{margin-bottom:20px;} body:has(.launch) .launch-title{font-size:clamp(34px,9vw,43px);margin-bottom:14px;} body:has(.launch) .launch-sub{margin-bottom:24px;} </style>');
+  html = html.replace('</style>', 'textarea.note{display:block !important;min-height:72px;resize:vertical;} .note-row{align-items:flex-start;} .voice{min-width:52px;} body:has(.launch) .top{display:none;} body:has(.launch) .wrap{padding-bottom:0;} body:has(.launch) .launch{min-height:100vh;align-items:flex-start;padding-top:clamp(72px,12vh,120px);padding-bottom:48px;} body:has(.launch) .app-mark{margin-bottom:20px;} body:has(.launch) .launch-title{font-size:clamp(34px,9vw,43px);margin-bottom:14px;} body:has(.launch) .launch-sub{margin-bottom:24px;} .do-not-start-title{font-size:clamp(34px,9vw,43px);line-height:1.05;letter-spacing:-.035em;margin:18px 0 20px;color:var(--txt)} .vehicle-prompt{color:var(--muted);font-size:15px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin:2px 0 10px} .cold-start-card{margin-top:14px;border:1px solid var(--line);border-radius:16px;padding:16px;background:var(--card)} .cold-start-card h3{margin:0 0 8px;color:var(--txt);font-size:17px;text-transform:none;letter-spacing:0} .cold-start-card p{margin:0 0 12px;color:var(--muted);font-size:13px;line-height:1.45} .cold-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.cold-choice{border:1px solid var(--line);border-radius:11px;padding:12px 8px;background:#15191e;color:var(--txt);font-weight:800}.cold-choice.sel{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold) inset}.cold-warning{margin-top:12px;padding:12px;border-radius:11px;background:#2a1b18;border:1px solid var(--red);color:var(--txt);font-size:13px;line-height:1.45}.cold-warning strong{display:block;margin-bottom:4px;color:var(--red)}#next:disabled{opacity:.45;cursor:not-allowed}</style>');
   const voiceFix = `<script>
 function setupVoiceNotes(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -57,32 +57,72 @@ function setupVoiceNotes(){
   const startScreenFix = `<script>
 (function(){
   const originalStart = window.start;
+  if(typeof originalStart !== 'function') return;
   window.start = function(){
     originalStart();
-    const intro = document.querySelector('.start-intro');
-    const card = document.querySelector('.start-card');
-    if(!intro || !card) return;
-    const small = intro.querySelector('.small');
-    if(small) small.textContent = 'GET READY';
-    const selectWrap = card.querySelector('.select-wrap');
-    if(selectWrap){
-      const label = document.createElement('div');
-      label.className = 'vehicle-prompt';
-      label.textContent = 'Choose your vehicle';
-      card.insertBefore(label, selectWrap);
-    }
-    const title = document.createElement('h1');
-    title.className = 'do-not-start-title';
-    title.textContent = 'Do Not Start Engine';
-    const introEnd = intro.querySelector('.small');
-    introEnd.insertAdjacentElement('afterend', title);
-    const oldIntro = intro.querySelector('.small');
-    if(oldIntro) oldIntro.remove();
+    setTimeout(() => {
+      const intro = document.querySelector('.start-intro');
+      const card = document.querySelector('.start-card');
+      if(!intro || !card) return;
+      const old = intro.querySelector('.small');
+      if(old) old.textContent = 'GET READY';
+      const selectWrap = card.querySelector('.select-wrap');
+      if(selectWrap && !card.querySelector('.vehicle-prompt')){
+        const label = document.createElement('div');
+        label.className = 'vehicle-prompt';
+        label.textContent = 'Choose your vehicle';
+        card.insertBefore(label, selectWrap);
+      }
+      if(!intro.querySelector('.do-not-start-title')){
+        const title = document.createElement('h1');
+        title.className = 'do-not-start-title';
+        title.textContent = 'Do Not Start Engine';
+        const small = intro.querySelector('.small');
+        if(small) small.insertAdjacentElement('afterend', title);
+      }
+    },0);
   };
 })();
 </script>`;
-  html = html.replace("render();if('serviceWorker' in navigator)", voiceFix + startScreenFix + "render();if('serviceWorker' in navigator)");
-  html = html.replace('</style>', '.do-not-start-title{font-size:clamp(34px,9vw,43px);line-height:1.05;letter-spacing:-.035em;margin:18px 0 20px;color:var(--txt)}.vehicle-prompt{color:var(--muted);font-size:15px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;margin:2px 0 10px}</style>');
+  const coldStartFix = `<script>
+(function(){
+  function wireColdStart(){
+    const card = document.querySelector('.start-card');
+    const select = card && card.querySelector('.select-wrap select');
+    const footerBtn = document.getElementById('next');
+    if(!card || !select || !footerBtn) return false;
+    let existing = card.querySelector('.cold-start-card');
+    if(!existing){
+      existing = document.createElement('div');
+      existing.className = 'cold-start-card';
+      existing.innerHTML = '<h3>Is the engine cold?</h3><p>The vehicle must be checked from cold. Do not allow the engine to be started before the inspection begins.</p><div class="cold-choice-grid"><button type="button" class="cold-choice" data-cold="yes">Yes — engine is cold</button><button type="button" class="cold-choice" data-cold="no">No — vehicle has been started</button></div><div class="cold-warning hidden" data-cold-warning><strong>Rebook the vehicle when cold</strong>You have missed the opportunity to check the vehicle from cold. Especially in cold weather, diesel engines can reveal noises that may disappear once the engine is warm. Rebook and check the vehicle when cold.</div>';
+      card.appendChild(existing);
+    }
+    const choices = existing.querySelectorAll('[data-cold]');
+    choices.forEach(btn => {
+      if(btn.dataset.wired) return;
+      btn.dataset.wired='1';
+      btn.addEventListener('click', () => {
+        choices.forEach(x => x.classList.remove('sel'));
+        btn.classList.add('sel');
+        const cold = btn.dataset.cold === 'yes';
+        window.__secondLookEngineCold = cold;
+        const warning = existing.querySelector('[data-cold-warning]');
+        warning.classList.toggle('hidden', cold);
+        footerBtn.disabled = !cold;
+        if(!cold) footerBtn.textContent = 'Rebook vehicle when cold';
+        else if(footerBtn.textContent === 'Rebook vehicle when cold') footerBtn.textContent = 'Start the check';
+      });
+    });
+    footerBtn.disabled = window.__secondLookEngineCold !== true;
+    return true;
+  }
+  const observer = new MutationObserver(() => wireColdStart());
+  observer.observe(document.documentElement,{subtree:true,childList:true});
+  setTimeout(wireColdStart,50);
+})();
+</script>`;
+  html = html.replace("render();if('serviceWorker' in navigator)", voiceFix + startScreenFix + coldStartFix + "render();if('serviceWorker' in navigator)");
   return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
 }
 
