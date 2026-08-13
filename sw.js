@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v12';
+const CACHE = 'second-look-4-u-v13';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -16,39 +16,17 @@ function setupVoiceNotes(){
     const status = document.querySelector('[data-voice-status="'+id+'"]');
     note.classList.add('show');
     note.focus();
-    if (!SR) {
-      status.textContent = 'Voice input is not available in this browser. Use the microphone on the iPhone keyboard.';
-      return;
-    }
+    if (!SR) { status.textContent = 'Voice input is not available in this browser. Use the microphone on the iPhone keyboard.'; return; }
     let r = results.find(z => z.id === id);
     if (!r) { r = {id}; results.push(r); }
     const base = note.value.trim();
-    const rec = new SR();
-    rec.lang = 'en-GB';
-    rec.interimResults = true;
-    rec.continuous = false;
+    const rec = new SR(); rec.lang = 'en-GB'; rec.interimResults = true; rec.continuous = false;
     let finished = false;
     const finish = () => { if(finished)return; finished=true; btn.classList.remove('listening'); };
-    btn.classList.add('listening');
-    status.textContent = 'Listening… speak now';
+    btn.classList.add('listening'); status.textContent = 'Listening… speak now';
     rec.onstart = () => { status.textContent = 'Listening… speak now'; };
-    rec.onresult = e => {
-      let finalText = '', interimText = '';
-      for(let i=e.resultIndex;i<e.results.length;i++){
-        const t=e.results[i][0].transcript;
-        if(e.results[i].isFinal) finalText += t;
-        else interimText += t;
-      }
-      const shown = (base ? base+' ' : '') + (finalText || interimText);
-      note.value = shown.trim();
-      r.note = note.value;
-      status.textContent = finalText ? 'Voice note added.' : 'Listening…';
-    };
-    rec.onerror = e => {
-      const messages={not-allowed:'Microphone access was blocked. Check Safari microphone permission.',audio-capture:'No microphone was available.',network:'Speech recognition needs an internet connection.'};
-      status.textContent = messages[e.error] || 'Voice input could not be used. Try again or use the keyboard microphone.';
-      finish();
-    };
+    rec.onresult = e => { let finalText='', interimText=''; for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=t;else interimText+=t;} const shown=(base?base+' ':'')+(finalText||interimText); note.value=shown.trim(); r.note=note.value; status.textContent=finalText?'Voice note added.':'Listening…'; };
+    rec.onerror = e => { const messages={not-allowed:'Microphone access was blocked. Check Safari microphone permission.',audio-capture:'No microphone was available.',network:'Speech recognition needs an internet connection.'}; status.textContent=messages[e.error]||'Voice input could not be used. Try again or use the keyboard microphone.'; finish(); };
     rec.onend = () => { finish(); if(status.textContent==='Listening…' || status.textContent==='Listening… speak now') status.textContent='Voice input ended.'; };
     try { rec.start(); } catch(e) { finish(); status.textContent='Voice input could not be started. Try again or use the keyboard microphone.'; }
   });
@@ -69,17 +47,10 @@ function setupVoiceNotes(){
       if(old) old.textContent = 'GET READY';
       const selectWrap = card.querySelector('.select-wrap');
       if(selectWrap && !card.querySelector('.vehicle-prompt')){
-        const label = document.createElement('div');
-        label.className = 'vehicle-prompt';
-        label.textContent = 'Choose your vehicle';
-        card.insertBefore(label, selectWrap);
+        const label=document.createElement('div'); label.className='vehicle-prompt'; label.textContent='Choose your vehicle'; card.insertBefore(label,selectWrap);
       }
       if(!intro.querySelector('.do-not-start-title')){
-        const title = document.createElement('h1');
-        title.className = 'do-not-start-title';
-        title.textContent = 'Do Not Start Engine';
-        const small = intro.querySelector('.small');
-        if(small) small.insertAdjacentElement('afterend', title);
+        const title=document.createElement('h1'); title.className='do-not-start-title'; title.textContent='Do Not Start Engine'; const small=intro.querySelector('.small'); if(small) small.insertAdjacentElement('afterend',title);
       }
     },0);
   };
@@ -88,45 +59,39 @@ function setupVoiceNotes(){
   const coldStartFix = `<script>
 (function(){
   function wireColdStart(){
-    const card = document.querySelector('.start-card');
-    const select = card && card.querySelector('.select-wrap select');
-    const footerBtn = document.getElementById('next');
-    if(!card || !select || !footerBtn) return false;
+    const card=document.querySelector('.start-card');
+    const select=card&&card.querySelector('.select-wrap select');
+    const footerBtn=document.getElementById('next');
+    if(!card||!select||!footerBtn)return false;
     if(!select.dataset.coldReset){
       select.dataset.coldReset='1';
-      select.addEventListener('change', () => {
-        window.__secondLookEngineCold = false;
-        setTimeout(wireColdStart,0);
-      });
+      select.addEventListener('change',()=>{window.__secondLookEngineCold=false;setTimeout(wireColdStart,0);});
     }
-    let existing = card.querySelector('.cold-start-card');
+    let existing=card.querySelector('.cold-start-card');
     if(!existing){
-      existing = document.createElement('div');
-      existing.className = 'cold-start-card';
-      existing.innerHTML = '<h3>Engine condition</h3><p>Before starting the inspection, confirm whether the engine is still cold.</p><select class="cold-start-select" aria-label="Engine condition"><option value="">Select engine condition</option><option value="cold">Engine is cold — ready to check</option><option value="started">Vehicle has already been started</option></select><div class="cold-warning hidden" data-cold-warning><strong>Rebook the vehicle when cold</strong>You have missed the opportunity to check the vehicle from cold. Especially in cold weather, diesel engines can reveal noises that may disappear once the engine is warm. Rebook and check the vehicle when cold.</div>';
+      existing=document.createElement('div'); existing.className='cold-start-card';
+      existing.innerHTML='<h3>Engine condition</h3><p>Before starting the inspection, confirm whether the engine is still cold.</p><select class="cold-start-select" aria-label="Engine condition"><option value="">Select engine condition</option><option value="cold">Engine is cold — ready to check</option><option value="started">Vehicle has already been started</option></select><div class="cold-warning hidden" data-cold-warning><strong>Rebook the vehicle when cold</strong>You have missed the opportunity to check the vehicle from cold. Especially in cold weather, diesel engines can reveal noises that may disappear once the engine is warm. Rebook and check the vehicle when cold.</div>';
       card.appendChild(existing);
     }
-    const condition = existing.querySelector('.cold-start-select');
+    const condition=existing.querySelector('.cold-start-select');
     if(!condition.dataset.wired){
       condition.dataset.wired='1';
-      condition.addEventListener('change', () => {
-        const cold = condition.value === 'cold';
-        window.__secondLookEngineCold = cold;
-        const warning = existing.querySelector('[data-cold-warning]');
-        warning.classList.toggle('hidden', condition.value !== 'started');
-        footerBtn.disabled = !cold;
-        footerBtn.textContent = cold ? 'Start the check' : (condition.value === 'started' ? 'Rebook vehicle when cold' : 'Start the check');
+      condition.addEventListener('change',()=>{
+        const cold=condition.value==='cold'; window.__secondLookEngineCold=cold;
+        existing.querySelector('[data-cold-warning]').classList.toggle('hidden',condition.value!=='started');
+        footerBtn.disabled=!cold;
+        footerBtn.textContent=cold?'Start the check':(condition.value==='started'?'Rebook vehicle when cold':'Start the check');
       });
     }
-    footerBtn.disabled = window.__secondLookEngineCold !== true;
+    footerBtn.disabled=window.__secondLookEngineCold!==true;
     return true;
   }
-  const observer = new MutationObserver(() => wireColdStart());
-  observer.observe(document.documentElement,{subtree:true,childList:true});
-  setTimeout(wireColdStart,50);
+  const observer=new MutationObserver(()=>wireColdStart()); observer.observe(document.documentElement,{subtree:true,childList:true}); setTimeout(wireColdStart,50);
 })();
 </script>`;
-  html = html.replace("render();if('serviceWorker' in navigator)", voiceFix + startScreenFix + coldStartFix + "render();if('serviceWorker' in navigator)");
+  const inject = voiceFix + startScreenFix + coldStartFix;
+  if (html.includes('</body>')) html = html.replace('</body>', inject + '</body>');
+  else html += inject;
   return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
 }
 
