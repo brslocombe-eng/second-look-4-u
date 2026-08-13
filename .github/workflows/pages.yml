@@ -32,16 +32,18 @@ jobs:
           index = Path('index.html')
           html = index.read_text()
           old = "document.getElementById('next').onclick=()=>{if(sec<sections.length-1){sec++;render()}else{screen='result';render()}}"
-          new = "document.getElementById('next').onclick=()=>{if(sec<sections.length-1){sec++;render();requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'auto'}))}else{screen='result';render()}}"
+          new = "document.getElementById('next').onclick=()=>{if(sec<sections.length-1){sec++;render();requestAnimationFrame(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0;window.scrollTo(0,0);const first=document.querySelector('#app .check');if(first)first.scrollIntoView({block:'start',behavior:'auto'});setTimeout(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0;window.scrollTo(0,0)},80)})}else{screen='result';render()}}"
           if old not in html:
               raise SystemExit('Expected Next-section handler was not found; deployment stopped safely.')
-          index.write_text(html.replace(old, new, 1))
+          html = html.replace(old, new, 1)
+          html = html.replace('</style>', '#app .check{scroll-margin-top:88px;} </style>', 1)
+          index.write_text(html)
 
           sw = Path('sw.js')
           worker = sw.read_text()
           if 'second-look-4-u-v7' not in worker:
               raise SystemExit('Expected service-worker cache version was not found; deployment stopped safely.')
-          sw.write_text(worker.replace('second-look-4-u-v7', 'second-look-4-u-v8', 1))
+          sw.write_text(worker.replace('second-look-4-u-v7', 'second-look-4-u-v9', 1))
           PY
 
       - name: Configure Pages
