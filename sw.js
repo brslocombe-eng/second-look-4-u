@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v13';
+const CACHE = 'second-look-4-u-v14';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -89,7 +89,20 @@ function setupVoiceNotes(){
   const observer=new MutationObserver(()=>wireColdStart()); observer.observe(document.documentElement,{subtree:true,childList:true}); setTimeout(wireColdStart,50);
 })();
 </script>`;
-  const inject = voiceFix + startScreenFix + coldStartFix;
+  const transmissionUiFix = `<script>
+(function(){
+  function simplifyTransmission(){
+    const box=document.querySelector('[data-check-id="transmission"]');
+    if(!box)return;
+    const choices=box.querySelector('.choices');
+    if(choices) choices.style.display='none';
+  }
+  const observer=new MutationObserver(simplifyTransmission);
+  observer.observe(document.documentElement,{subtree:true,childList:true});
+  setTimeout(simplifyTransmission,50);
+})();
+</script>`;
+  const inject = voiceFix + startScreenFix + coldStartFix + transmissionUiFix;
   if (html.includes('</body>')) html = html.replace('</body>', inject + '</body>');
   else html += inject;
   return new Response(html, {status: response.status, statusText: response.statusText, headers: response.headers});
@@ -108,8 +121,8 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => event.waitUntil(
   caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    .then(() => self.clients.claim())
-));
+    .then(() => self.clients.claim()))
+);
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
