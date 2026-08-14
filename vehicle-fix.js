@@ -2,6 +2,14 @@
   function isTwoDoor(){
     return typeof vehicle!=='undefined' && (vehicle.type==='sportHard'||vehicle.type==='sportCanvas');
   }
+  function ensureBriefCheck(){
+    if(typeof S==='undefined'||!Array.isArray(S)) return;
+    var walk=S.find(function(x){return x.name==='1. General walk-around';});
+    if(!walk||!Array.isArray(walk.items)) return;
+    if(!walk.items.some(function(i){return i&&i[0]==='firstfinding';})){
+      walk.items.push(['firstfinding','Anything worth recording?','If you spot damage or anything that concerns you during the initial walk-around, record it now. You are not expected to diagnose it.']);
+    }
+  }
   function removeRearDoorItems(){
     if(!isTwoDoor()||typeof S==='undefined'||!Array.isArray(S)) return;
     S.forEach(function(sec){
@@ -15,7 +23,9 @@
   }
   function apply(){
     try{
-      if(!isTwoDoor()||typeof S==='undefined'||!Array.isArray(S)) return;
+      if(typeof S==='undefined'||!Array.isArray(S)) return;
+      ensureBriefCheck();
+      if(!isTwoDoor()) return;
       removeRearDoorItems();
       var rear=S.find(function(x){return x.name==='2. Bodywork — rear';});
       if(rear){
@@ -57,5 +67,5 @@
   }
   var tries=0;var timer=setInterval(function(){apply();hideConvertibleRoofOptions();hideRenderedRearDoors();if(++tries>120)clearInterval(timer);},250);
   document.addEventListener('change',function(){apply();hideConvertibleRoofOptions();hideRenderedRearDoors();},true);
-  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){hideRenderedRearDoors();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
+  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){ensureBriefCheck();hideRenderedRearDoors();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
 })();
