@@ -32,6 +32,34 @@
       });
     });
   }
+  function hideRenderedRearDoors(){
+    try{
+      if(!isTwoDoor()) return;
+      document.querySelectorAll('.check').forEach(function(card){
+        var id=card.getAttribute('data-id')||'';
+        var text=(card.textContent||'');
+        if(id==='drd'||id==='prd'||/rear\s+door/i.test(text)) card.remove();
+      });
+    }catch(e){}
+  }
+  function patchRender(){
+    try{
+      if(typeof render!=='function'||render.__sl4uPatched) return;
+      var original=render;
+      var wrapped=function(){
+        var result=original.apply(this,arguments);
+        try{
+          ensureBriefCheck();
+          ensureConvertibleRoofOperation();
+          removeRearDoorItems();
+          hideRenderedRearDoors();
+        }catch(e){}
+        return result;
+      };
+      wrapped.__sl4uPatched=true;
+      window.render=wrapped;
+    }catch(e){}
+  }
   function apply(){
     try{
       if(typeof S==='undefined'||!Array.isArray(S)) return;
@@ -51,20 +79,7 @@
       if(passenger&&!passenger.items.some(function(i){return i[0]==='roof_passenger'})) passenger.items.push(['roof_passenger','Roof — passenger side','While on the passenger side, '+roofText]);
       ensureConvertibleRoofOperation();
       removeRearDoorItems();
-      if(typeof render==='function'&&typeof screen!=='undefined'&&screen==='inspect') render();
-      ensureConvertibleRoofOperation();
-      removeRearDoorItems();
       hideRenderedRearDoors();
-    }catch(e){}
-  }
-  function hideRenderedRearDoors(){
-    try{
-      if(!isTwoDoor()) return;
-      document.querySelectorAll('.check').forEach(function(card){
-        var id=card.getAttribute('data-id')||'';
-        var text=(card.textContent||'');
-        if(id==='drd'||id==='prd'||/rear\s+door/i.test(text)) card.remove();
-      });
     }catch(e){}
   }
   function hideConvertibleRoofOptions(){
@@ -78,7 +93,7 @@
       if(convertible){pan.value='no';sun.value='no';}
     }catch(e){}
   }
-  var tries=0;var timer=setInterval(function(){apply();hideConvertibleRoofOptions();hideRenderedRearDoors();if(++tries>120)clearInterval(timer);},250);
-  document.addEventListener('change',function(){apply();hideConvertibleRoofOptions();hideRenderedRearDoors();},true);
-  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){ensureBriefCheck();ensureConvertibleRoofOperation();hideRenderedRearDoors();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
+  var tries=0;var timer=setInterval(function(){patchRender();apply();hideConvertibleRoofOptions();hideRenderedRearDoors();if(++tries>120)clearInterval(timer);},250);
+  document.addEventListener('change',function(){patchRender();apply();hideConvertibleRoofOptions();hideRenderedRearDoors();},true);
+  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){patchRender();ensureBriefCheck();ensureConvertibleRoofOperation();removeRearDoorItems();hideRenderedRearDoors();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
 })();
