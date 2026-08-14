@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Refreshing Second Look 4 U</title><style>body{margin:0;background:#111418;color:#f4f5f6;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;display:grid;place-items:center;min-height:100vh;text-align:center}main{padding:30px}h1{font-size:26px}p{color:#9ca5b0;line-height:1.5}</style></head>
+<body><main><h1>Refreshing Second Look 4 U…</h1><p>Clearing the old app version and loading the current version.</p></main>
+<script>
+(async()=>{
+  try {
+    const regs=await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(r=>r.unregister()));
+  } catch(e) {}
+  try {
+    const keys=await caches.keys();
+    await Promise.all(keys.map(k=>caches.delete(k)));
+  } catch(e) {}
+  setTimeout(()=>location.replace('./?fresh=20260814'),150);
+})();
+</script>
+</body></html>
