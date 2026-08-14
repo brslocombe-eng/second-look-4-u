@@ -2,12 +2,23 @@
   function isTwoDoor(){
     return typeof vehicle!=='undefined' && (vehicle.type==='sportHard'||vehicle.type==='sportCanvas');
   }
+  function isConvertible(){
+    return typeof vehicle!=='undefined' && vehicle.type==='sportCanvas';
+  }
   function ensureBriefCheck(){
     if(typeof S==='undefined'||!Array.isArray(S)) return;
     var walk=S.find(function(x){return x.name==='1. General walk-around';});
     if(!walk||!Array.isArray(walk.items)) return;
     if(!walk.items.some(function(i){return i&&i[0]==='firstfinding';})){
       walk.items.push(['firstfinding','Anything worth recording?','If you spot damage or anything that concerns you during the initial walk-around, record it now. You are not expected to diagnose it.']);
+    }
+  }
+  function ensureConvertibleRoofOperation(){
+    if(!isConvertible()||typeof S==='undefined'||!Array.isArray(S)) return;
+    var driver=S.find(function(x){return x.name==="2. Bodywork — driver's side";});
+    if(!driver||!Array.isArray(driver.items)) return;
+    if(!driver.items.some(function(i){return i&&i[0]==='roof_operation';})){
+      driver.items.push(['roof_operation','Convertible roof — operation','If safe to do so, operate the roof through its normal opening and closing cycle. Check that it moves smoothly, the mechanism and latches operate correctly, and there is no abnormal noise, hesitation, resistance, misalignment or obvious seal problem when closed.']);
     }
   }
   function removeRearDoorItems(){
@@ -38,8 +49,10 @@
       var roofText='Physically inspect the roof all the way around. Check the roof surface, seals, frame and mechanism for damage, wear, corrosion, leaks or anything unusual. On a canvas convertible, inspect the fabric and folding mechanism. On a hardtop, inspect the roof panel and seals.';
       if(driver&&!driver.items.some(function(i){return i[0]==='roof_driver'})) driver.items.push(['roof_driver','Roof — driver side','While on the driver side, '+roofText]);
       if(passenger&&!passenger.items.some(function(i){return i[0]==='roof_passenger'})) passenger.items.push(['roof_passenger','Roof — passenger side','While on the passenger side, '+roofText]);
+      ensureConvertibleRoofOperation();
       removeRearDoorItems();
       if(typeof render==='function'&&typeof screen!=='undefined'&&screen==='inspect') render();
+      ensureConvertibleRoofOperation();
       removeRearDoorItems();
       hideRenderedRearDoors();
     }catch(e){}
@@ -67,5 +80,5 @@
   }
   var tries=0;var timer=setInterval(function(){apply();hideConvertibleRoofOptions();hideRenderedRearDoors();if(++tries>120)clearInterval(timer);},250);
   document.addEventListener('change',function(){apply();hideConvertibleRoofOptions();hideRenderedRearDoors();},true);
-  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){ensureBriefCheck();hideRenderedRearDoors();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
+  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){ensureBriefCheck();ensureConvertibleRoofOperation();hideRenderedRearDoors();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
 })();
