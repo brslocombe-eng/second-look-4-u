@@ -28,22 +28,46 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
           index = Path('index.html')
           html = index.read_text()
-          old = "document.getElementById('next').onclick=()=>{if(sec<sections.length-1){sec++;render()}else{screen='result';render()}}"
-          new = "document.getElementById('next').onclick=()=>{if(sec<sections.length-1){sec++;render();requestAnimationFrame(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0;window.scrollTo(0,0);const first=document.querySelector('#app .check');if(first)first.scrollIntoView({block:'start',behavior:'auto'});setTimeout(()=>{document.documentElement.scrollTop=0;document.body.scrollTop=0;window.scrollTo(0,0)},80)})}else{screen='result';render()}}"
-          if old not in html:
-              raise SystemExit('Expected Next-section handler was not found; deployment stopped safely.')
-          html = html.replace(old, new, 1)
-          html = html.replace('</style>', '#app .check{scroll-margin-top:88px;} </style>', 1)
-          index.write_text(html)
 
+          patch = r'''<script>
+          (()=>{
+            const STYLE=`
+            .sl-preflight{background:#111418;min-height:100vh;padding:26px 18px 120px;display:flex;justify-content:center}.sl-preflight-inner{width:100%;max-width:620px}.sl-preflight h1{font-size:32px;margin:6px 0 8px}.sl-preflight .sl-sub{color:#9ca5b0;margin-bottom:20px}.sl-field{margin:14px 0}.sl-field label{display:block;color:#9ca5b0;font-size:13px;font-weight:800;margin-bottom:7px}.sl-field select{width:100%;background:#15191e;color:#f4f5f6;border:1px solid #303740;border-radius:12px;padding:14px}.sl-error{color:#dc4c3d;font-size:13px;margin-top:10px}.sl-note{font-size:12px;color:#9ca5b0;line-height:1.4}.sl-guide{border-left:3px solid #e6a23c;padding-left:12px;margin:14px 0;color:#f4f5f6;font-size:13px;line-height:1.45}.sl-found{background:#2a1b18;border:1px solid #dc4c3d;border-radius:12px;padding:13px;color:#f4f5f6;font-size:13px;line-height:1.45;margin-top:10px}.sl-setup-hidden{display:none!important}`;
+            const style=document.createElement('style');style.textContent=STYLE;document.head.appendChild(style);
+            function optionVehicleType(){return [...document.querySelectorAll('#app select')].find(x=>[...x.options].some(o=>/5-door hatch|3-door hatch|saloon|estate|sports car|convertible/i.test(o.textContent)))}
+            function buildPreflight(vehicleSelect){
+              if(document.getElementById('sl-preflight'))return;
+              const host=document.createElement('div');host.id='sl-preflight';host.className='sl-preflight';
+              host.innerHTML=`<div class="sl-preflight-inner"><div class="sl-sub">Before you start</div><h1>Choose your vehicle</h1><div class="sl-field"><label>Vehicle</label><select id="sl-vehicle"></select></div><div class="sl-field"><label>Transmission</label><select id="sl-trans"><option value="">Select transmission</option><option>Manual</option><option>Automatic</option></select></div><div class="sl-field"><label>Is the engine cold?</label><select id="sl-cold"><option value="">Select yes or no</option><option value="yes">Yes — engine is cold</option><option value="no">No — vehicle has already been started</option></select><div id="sl-coldmsg"></div></div><div id="sl-roof-fields"><div class="sl-field"><label>Panoramic glass roof fitted?</label><select id="sl-pano"><option value="">Select yes or no</option><option value="yes">Yes</option><option value="no">No</option></select></div><div class="sl-field"><label>Tilt &amp; slide sunroof fitted?</label><select id="sl-sun"><option value="">Select yes or no</option><option value="yes">Yes</option><option value="no">No</option></select></div></div><div class="sl-guide">Once these details are confirmed, Second Look will use them to set the rest of the inspection. You won't be asked for the same specification again.</div><button id="sl-start" class="btn primary">START THE CHECK</button><div id="sl-error" class="sl-error"></div></div>`;
+              const copy=document.getElementById('sl-vehicle');[...vehicleSelect.options].forEach(o=>{const n=document.createElement('option');n.value=o.value;n.textContent=o.textContent;copy.appendChild(n)});document.body.appendChild(host);
+              const sync=()=>{const text=copy.options[copy.selectedIndex]?.text||'';const convertible=/convertible/i.test(text);document.getElementById('sl-roof-fields').classList.toggle('hidden',convertible);document.getElementById('sl-coldmsg').innerHTML=document.getElementById('sl-cold').value==='no'?'<div class="sl-found"><strong>Rebook the vehicle when cold.</strong><br>You have missed the opportunity to check the vehicle from cold. Especially in cold weather, some engine noises may disappear once the engine is warm. Rebook and check the vehicle when cold.</div>':''};
+              copy.addEventListener('change',sync);document.getElementById('sl-cold').addEventListener('change',sync);sync();
+              document.getElementById('sl-start').onclick=()=>{const v=copy.value,t=document.getElementById('sl-trans').value,c=document.getElementById('sl-cold').value,p=document.getElementById('sl-pano').value,s=document.getElementById('sl-sun').value,err=document.getElementById('sl-error');if(!v||!t||!c||(!/convertible/i.test(copy.options[copy.selectedIndex]?.text||'')&&(!p||!s))){err.textContent='Please complete the vehicle details before starting the check.';return}if(c==='no'){err.textContent='Please rebook the vehicle and return when the engine is cold.';return}try{const key=typeof vehicleTypes!=='undefined'?Object.keys(vehicleTypes).find(k=>vehicleTypes[k].name===copy.options[copy.selectedIndex].textContent):null;if(key&&typeof vehicle!=='undefined'){vehicle.type=key;vehicle.panoramic=p==='yes';vehicle.sunroof=s==='yes'}host.remove();if(typeof render==='function'){screen='setup';render()}const next=[...document.querySelectorAll('#next,.primary')].find(b=>/start|check/i.test(b.textContent));if(next)next.click()}catch(e){host.remove()}};
+            }
+            function applyUX(){
+              const app=document.getElementById('app');if(!app)return;
+              const vs=optionVehicleType();
+              if(vs&&!document.getElementById('sl-preflight')&&/select your car|choose your vehicle/i.test(document.body.textContent)){
+                [...app.children].forEach(el=>el.classList.add('sl-setup-hidden'));buildPreflight(vs);
+              }
+              [...document.querySelectorAll('.check')].forEach(c=>{const h=c.querySelector('h4');if(!h)return;const t=h.textContent.trim();if(/front lights|rear lights/i.test(t)){const p=c.querySelector('p');if(p&&!p.dataset.slFixed){p.textContent='From outside the vehicle, inspect the light units for cracks, damage, loose fittings or condensation. Do not switch the lights on yet — we will test their operation later.';p.dataset.slFixed='1'}}if(/electric windows|window controls/i.test(t)){h.textContent='Windows & switches';const p=c.querySelector('p');if(p&&!p.dataset.slFixed){p.textContent="Operate the driver's window switch fully down and back up. Then work your way around the interior, touching, feeling and operating the remaining window switches, controls and fittings you find. Check that they work as expected and feel secure. If you're unsure what something does, ask the seller.";p.dataset.slFixed='1'}}if(/interior controls & lights/i.test(t)){const p=c.querySelector('p');if(p&&!p.dataset.slFixed){p.textContent='Touch, feel and operate the switches, buttons and controls you can see. Include sun visors, vanity mirrors and illumination if fitted. Look for anything loose, damaged or broken.';p.dataset.slFixed='1'}}});
+              const boot=[...document.querySelectorAll('.check')].find(c=>/boot \/ tailgate/i.test(c.querySelector('h4')?.textContent||''));if(boot&&!document.getElementById('sl-boot-note')){const p=document.createElement('p');p.id='sl-boot-note';p.className='sl-note';p.textContent='Open the boot and check the parcel shelf, if fitted. Check for a spare wheel and tools or a puncture-repair/inflation kit, where applicable. If locking wheel nuts are fitted, check the locking-wheel-nut key is present and matches the vehicle.';boot.appendChild(p)}
+              const vin=[...document.querySelectorAll('.check')].find(c=>/VIN \/ chassis number/i.test(c.querySelector('h4')?.textContent||''));if(vin&&!vin.dataset.slMoved){vin.dataset.slMoved='1';vin.querySelector('h4').textContent='VIN / chassis number — final paperwork';const p=vin.querySelector('p');if(p)p.textContent='At the end of the inspection, check the VIN at the lower passenger-side corner of the dashboard/windscreen and confirm it matches the V5C.'}
+              const result=document.querySelector('.result');if(result&&!document.getElementById('sl-complete')){const b=document.createElement('div');b.id='sl-complete';b.className='completion-banner';b.innerHTML='<strong>INSPECTION COMPLETE</strong><span>You have reached the end of the Second Look inspection. Review your findings below — there is nothing further to inspect.</span>';result.prepend(b)}
+            }
+            new MutationObserver(applyUX).observe(document.body,{childList:true,subtree:true});setTimeout(applyUX,250);
+          })();
+          </script>'''
+          html = html.replace('</body>', patch + '</body>')
           sw = Path('sw.js')
           worker = sw.read_text()
-          if 'second-look-4-u-v7' not in worker:
-              raise SystemExit('Expected service-worker cache version was not found; deployment stopped safely.')
-          sw.write_text(worker.replace('second-look-4-u-v7', 'second-look-4-u-v9', 1))
+          worker = re.sub(r"const CACHE = '[^']+';", "const CACHE = 'second-look-4-u-v16';", worker, count=1)
+          sw.write_text(worker)
+          index.write_text(html)
           PY
 
       - name: Configure Pages
