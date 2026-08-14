@@ -29,7 +29,7 @@
     const driver=[],passenger=[],rear=[],front=[];
     if(panels) panels.items.forEach(x=>{const t=x.title;if(/^Driver /.test(t))driver.push(x);else if(/^Passenger /.test(t))passenger.push(x);else if(t==='Rear bumper'||t==='Boot / tailgate')rear.push(x);else if(t==='Front bumper')front.push(x);});
     const roof=panels&&panels.items.find(i=>i.title==='Roof');
-    if(roof){driver.push(item('roof_driver','Roof — driver's side','While you are on the driver’s side, stand back and inspect the roof for dents, scratches, damage or anything unusual.'));passenger.push(item('roof_passenger','Roof — passenger side','While you are on the passenger’s side, stand back and inspect the roof for dents, scratches, damage or anything unusual.'));}
+    if(roof){driver.push(item('roof_driver','Roof — driver\'s side','While you are on the driver’s side, stand back and inspect the roof for dents, scratches, damage or anything unusual.'));passenger.push(item('roof_passenger','Roof — passenger side','While you are on the passenger’s side, stand back and inspect the roof for dents, scratches, damage or anything unusual.'));}
     if(panels)panels.items=[];
     const driverSection={name:"2. Bodywork — driver's side",items:driver}; const rearSection={name:'2. Bodywork — rear',items:rear};
     const passengerSection={name:"2. Bodywork — passenger side",items:passenger}; const frontSection={name:'2. Bodywork — front end',items:front};
@@ -68,5 +68,40 @@
   const originalRender=window.render;window.render=function(){originalRender();if(screen==='start')setupStart();};
   const originalInspect=window.inspect;window.inspect=function(){originalInspect();document.querySelectorAll('.note-row').forEach(row=>{const note=row.querySelector('.note');if(note&&!row.querySelector('.note-help')){const help=document.createElement('div');help.className='note-help';help.textContent='Optional note — tap the box to type, or use the microphone on your iPhone keyboard. When you finish dictating, tap the keyboard microphone again to stop.';row.parentNode.insertBefore(help,row);}});const next=document.getElementById('next');if(next&&sec===sections.length-1)next.textContent='Complete inspection →';};
   const originalResult=window.result;window.result=function(){originalResult();const app=document.getElementById('app');if(app&&!app.querySelector('.completion-banner')){const banner=document.createElement('div');banner.className='completion-banner';banner.innerHTML='<strong>INSPECTION COMPLETE</strong><span>You have finished the Second Look inspection. Review your findings below.</span>';app.insertBefore(banner,app.firstChild);}};
+
+  /* HARD SECTION LOCK: every item in the current section must have a status before Next can work. */
+  function sectionComplete(){
+    try{
+      const s=sections&&sections[sec];
+      if(!s||!Array.isArray(s.items))return false;
+      const ids=s.items.map(i=>i&&i.id).filter(Boolean);
+      return ids.length>0 && ids.every(id=>{
+        const r=(results||[]).find(x=>x&&x.id===id);
+        return !!(r&&r.status);
+      });
+    }catch(e){return false;}
+  }
+  function enforceSectionLock(){
+    const next=document.getElementById('next');
+    if(!next||screen!=='inspect')return;
+    const complete=sectionComplete();
+    next.disabled=!complete;
+    next.setAttribute('aria-disabled',complete?'false':'true');
+    next.style.pointerEvents=complete?'auto':'none';
+    next.title=complete?'':'Complete every item in this section before continuing';
+  }
+  const oldInspect=window.inspect;
+  window.inspect=function(){
+    oldInspect();
+    enforceSectionLock();
+    const app=document.getElementById('app');
+    if(app&&!app.dataset.slLockObserver){
+      app.dataset.slLockObserver='1';
+      new MutationObserver(()=>enforceSectionLock()).observe(app,{childList:true,subtree:true,attributes:true});
+    }
+    document.querySelectorAll('.choice,[data-s],[data-status]').forEach(el=>el.addEventListener('click',()=>setTimeout(enforceSectionLock,0),true));
+  };
+  const oldRender=window.render;
+  window.render=function(){oldRender();if(screen==='start')setupStart();if(screen==='inspect')setTimeout(enforceSectionLock,0);};
   if(screen==='start')setupStart();
 })();
