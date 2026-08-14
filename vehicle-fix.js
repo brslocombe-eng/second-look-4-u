@@ -26,6 +26,18 @@
       if(typeof render==='function'&&typeof screen!=='undefined'&&screen==='inspect') render();
     }catch(e){}
   }
-  var tries=0;var timer=setInterval(function(){apply();if(++tries>20)clearInterval(timer);},250);
-  if(typeof MutationObserver!=='undefined') new MutationObserver(apply).observe(document.body,{childList:true,subtree:true});
+  function hideConvertibleRoofOptions(){
+    try{
+      var vt=document.getElementById('vt'),pan=document.getElementById('pan'),sun=document.getElementById('sun');
+      if(!vt||!pan||!sun)return;
+      var convertible=vt.value==='sportCanvas';
+      var panField=pan.closest('.field'),sunField=sun.closest('.field');
+      if(panField)panField.style.display=convertible?'none':'';
+      if(sunField)sunField.style.display=convertible?'none':'';
+      if(convertible){pan.value='no';sun.value='no';}
+    }catch(e){}
+  }
+  var tries=0;var timer=setInterval(function(){apply();hideConvertibleRoofOptions();if(++tries>40)clearInterval(timer);},250);
+  document.addEventListener('change',hideConvertibleRoofOptions,true);
+  if(typeof MutationObserver!=='undefined') new MutationObserver(function(){apply();hideConvertibleRoofOptions();}).observe(document.body,{childList:true,subtree:true});
 })();
