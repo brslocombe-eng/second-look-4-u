@@ -15,16 +15,35 @@
       if(wheels&&!wheels.items.some(i=>i[0]==='brakeDiscs')){
         wheels.items.push(['brakeDiscs','Brake discs — visible condition','If you can see the brake discs through the wheels, visually check them for excessive wear, heavy rust or obvious damage. You will not normally be able to assess the brake pads from outside. Do not diagnose faults.']);
       }
+      ensureRoofChecks(w);
       if(!w.__sl4uLiveFixRender && typeof w.render==='function'){
         const original=w.render;
         w.render=function(){
           original.apply(this,arguments);
-          setTimeout(addNegotiationSummary,0);
+          setTimeout(function(){ensureRoofChecks(w);addNegotiationSummary();},0);
         };
         w.__sl4uLiveFixRender=true;
       }
       addNegotiationSummary();
     }catch(e){}
+  }
+  function selectedRoof(w){
+    const v=w.vehicle||{};
+    return {pan:!!v.pan,sun:!!v.sun};
+  }
+  function ensureRoofChecks(w){
+    if(!w||!Array.isArray(w.S))return;
+    const r=selectedRoof(w);
+    const driver=w.S.find(s=>s.name==="2. Bodywork — driver's side");
+    const passenger=w.S.find(s=>s.name==='2. Bodywork — passenger side');
+    const inside=w.S.find(s=>s.name==='5. Inside the car');
+    const add=(sec,item)=>{if(sec&&!sec.items.some(i=>i&&i[0]===item[0]))sec.items.push(item)};
+    const glass=['roofGlass','Glass roof — condition','If the vehicle is fitted with a glass roof, physically inspect the glass from outside for cracks, chips, damage, excessive wear or other obvious defects.'];
+    const tilt=['sunroofOperation','Tilt & slide glass sunroof — operation','Operate the tilt & slide glass sunroof through its normal opening, tilting and closing functions. Check that it moves smoothly, fully opens/closes and seats correctly, with no abnormal noise, hesitation or obvious damage.'];
+    const blind=['sunroofBlind','Sunroof blind — operation','From inside the car, operate the electric sunroof blind. Check that it retracts fully and closes fully, operates smoothly and shows no obvious damage or abnormal noise.'];
+    const panBlind=['panoramicBlind','Panoramic roof blind — operation','From inside the car, operate the electric sliding blind. Check that it retracts fully and closes fully, operates smoothly and shows no obvious damage or abnormal noise.'];
+    if(r.sun){add(driver,glass);add(driver,tilt);add(inside,blind)}
+    if(r.pan){add(driver,glass);add(passenger,glass);add(inside,panBlind)}
   }
   function addNegotiationSummary(){
     try{
