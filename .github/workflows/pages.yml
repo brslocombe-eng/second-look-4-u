@@ -65,7 +65,7 @@ jobs:
           html = html.replace('</body>', patch + '</body>')
           sw = Path('sw.js')
           worker = sw.read_text()
-          worker = re.sub(r"const CACHE = '[^']+';", "const CACHE = 'second-look-4-u-v16';", worker, count=1)
+          worker = re.sub(r"const CACHE = '[^']+';", "const CACHE = 'second-look-4-u-v22';", worker, count=1)
           sw.write_text(worker)
           index.write_text(html)
           PY
