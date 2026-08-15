@@ -28,7 +28,7 @@
   function patchVehicleMenu(){
     try{
       var vt=document.getElementById('vt');if(!vt)return;
-      var desired={sportHard:'2-door sports car',sportCanvas:'2-door convertible',hatch3:'3-door hatch',saloon:'4-door saloon',hatch5:'5-door hatch or estate'};
+      var desired={hatch5:'5-door hatch or estate',saloon:'4-door saloon',hatch3:'3-door hatch',sportCanvas:'2-door convertible',sportHard:'2-door sports car'};
       Array.from(vt.options).forEach(function(o){if(o.value==='estate')o.remove();});
       Array.from(vt.options).forEach(function(o){if(desired[o.value])o.textContent=desired[o.value];});
       if(vt.dataset.slMenuPatched)return;
