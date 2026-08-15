@@ -1,0 +1,42 @@
+name: Fix negotiation results
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text()
+          marker='/* SL4U_NEGOTIATION_RESULTS_V1 */'
+          if marker not in s:
+              patch="""/* SL4U_NEGOTIATION_RESULTS_V1 */
+          (function(){
+            window.__sl4uFlags=window.__sl4uFlags||{};
+            function labelFor(id){try{if(window.f&&f.contentDocument&&f.contentDocument.defaultView&&f.contentDocument.defaultView.S){var S=f.contentDocument.defaultView.S;for(var i=0;i<S.length;i++)for(var j=0;j<S[i].items.length;j++)if(S[i].items[j][0]===id)return S[i].items[j][1]||id}}catch(e){}return id}
+            function capture(){try{var d=f.contentDocument;if(!d)return;d.querySelectorAll('.check').forEach(function(c){var id=c.dataset.id;if(!id||c.dataset.flagpatched)return;c.dataset.flagpatched='1';c.querySelectorAll('[data-s]').forEach(function(b){b.addEventListener('click',function(){var st=b.dataset.s;if(st==='amber'||st==='red')window.__sl4uFlags[id]={status:st,label:labelFor(id)}})})})}catch(e){}}
+            function results(){try{var d=f.contentDocument;if(!d||!d.body)return;capture();var flags=Object.keys(window.__sl4uFlags).map(function(k){return window.__sl4uFlags[k]}),neg=flags.filter(function(x){return x.status==='amber'}),con=flags.filter(function(x){return x.status==='red'});if(!neg.length&&!con.length)return;var target=null;d.querySelectorAll('h1,h2,h3,p,div,section').forEach(function(el){if(!target&&/^\\s*\\d+\\s+negotiations?\\s*$/i.test(el.textContent.trim()))target=el});if(!target)return;if(d.getElementById('sl4u-negotiation-details'))return;var box=d.createElement('div');box.id='sl4u-negotiation-details';box.style.cssText='margin:18px 0;padding:14px;border:1px solid #343a40;border-radius:12px;background:#171b20';var html='<strong>Negotiation points</strong>';if(neg.length)html+='<div style="margin-top:10px">'+neg.map(function(x){return '<div>• '+x.label+' — Negotiate</div>'}).join('')+'</div>';if(con.length)html+='<div style="margin-top:14px"><strong>Concerns</strong>'+con.map(function(x){return '<div style="margin-top:6px">• '+x.label+' — Concern</div>'}).join('')+'</div>';box.innerHTML=html;target.parentNode.insertBefore(box,target.nextSibling)}catch(e){}}
+            f.addEventListener('load',function(){setInterval(function(){capture();results()},300)});setInterval(function(){capture();results()},500);
+          })();"""
+              s=s.replace('</script></body></html>',patch+'</script></body></html>')
+              p.write_text(s)
+          PY
+      - name: Commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Show negotiation locations in final results'
+          git push
+      - name: Remove patch workflow
+        run: |
+          git rm .github/workflows/fix-negotiation-results.yml
+          git commit -m 'Remove temporary negotiation results workflow'
+          git push
