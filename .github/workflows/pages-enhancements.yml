@@ -1,0 +1,54 @@
+name: Deploy Second Look 4 U Enhancements
+
+on:
+  workflow_run:
+    workflows: ["Deploy Second Look 4 U"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-enhancements
+  cancel-in-progress: false
+
+jobs:
+  deploy-enhanced:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Add SL4U guided inspection layer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          index = Path('index.html')
+          html = index.read_text()
+          tag = '<script src="./sl4u-enhancements.js?v=1"></script>'
+          if tag not in html:
+              html = html.replace('</body>', tag + '</body>')
+          index.write_text(html)
+          PY
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
