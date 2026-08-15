@@ -23,18 +23,15 @@ jobs:
           p = Path('app.html')
           s = p.read_text(encoding='utf-8')
 
-          # Remove the duplicate General Walk-around recording prompt.
           s = s.replace("['firstfinding','Anything worth recording?','If you spot damage or anything that concerns you, record it now. You are not expected to diagnose it.'],", "")
 
-          # Replace the engine section so the dashboard warning-light check follows the cold start.
           engine = """{name:'4. Under the bonnet & cold start',items:[['dry','Engine bay / obvious leaks','Look for obvious leaks, staining, damaged components or anything out of place. You do not need to diagnose it.'],['oil','Oil level / condition','Check only if safe and you are comfortable doing so.'],['coolant','Coolant level','Check only when safe. Never open a hot cooling system.'],['coldstart','Cold start','Start the vehicle from cold and listen carefully for abnormal noises, rough starting or anything unusual.'],['warning','Dashboard warning lights','With the engine running, check the dashboard. The engine management/check-engine light should illuminate during the start-up self-check and then go out. Make sure it is not remaining illuminated. Check that no other unexplained warning or fault lights remain illuminated. If any warning light remains on, record it and decide what it means before continuing.']]}"""
-          s, n = re.subn(r"\{name:'4\\. Under the bonnet & cold start',items:\[.*?\]\},\n\{name:'5\\. Inside the car'", engine + ",\n{name:'5. Inside the car'", s, count=1, flags=re.S)
+          s, n = re.subn(r"\{name:'4\. Under the bonnet & cold start',items:\[.*?\]\},\{name:'5\. Inside the car'", engine + ",\{name:'5. Inside the car'", s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit('Engine section replacement failed')
 
-          # Replace the complete Inside-the-car sequence with the agreed natural workflow.
           inside = """{name:'5. Inside the car',items:[['windows','Windows & switches','Operate the driver window switch fully down and back up. Then repeat the process for the remaining window switches and controls. Touch, feel and operate the switches, buttons and controls you find. Check that they operate normally and are not loose, damaged or broken. If you are unsure what a control does, ask the seller.'],['locks','Locks & mirrors','Check the central locking and mirror controls. Operate the locks and mirrors and make sure they function normally and are not loose, damaged or broken.'],['lightsinside','Lights, indicators & wiper controls','Operate the light controls, indicators and wiper controls. Check that they function normally and that the controls are not loose, damaged or broken.'],['horn','Horn','Operate the horn and confirm it functions normally.'],['climate','Heating & air conditioning','Check the system gets hot and cold, fan speeds operate, airflow directions work and the air conditioning gets cold if fitted.'],['infotainment','Infotainment / Bluetooth / CarPlay','Check the infotainment system and its main functions. Check Bluetooth and Apple CarPlay/Android Auto if fitted, and connect a phone where appropriate.'],['seats','Seats & trim','Touch and feel the seats and trim. Check condition, adjustment and that controls operate normally.'],['visors','Sun visors & vanity mirrors','Check the sun visors, vanity mirrors and illumination if fitted.']]}"""
-          s, n = re.subn(r"\{name:'5\\. Inside the car',items:\[.*?\]\},\n\{name:'5\\. Boot", inside + ",\n{name:'5. Boot", s, count=1, flags=re.S)
+          s, n = re.subn(r"\{name:'5\. Inside the car',items:\[.*?\]\},\{name:'5\. Boot", inside + ",\{name:'5. Boot", s, count=1, flags=re.S)
           if n != 1:
               raise SystemExit('Inside-the-car section replacement failed')
 
