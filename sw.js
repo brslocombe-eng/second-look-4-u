@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v27';
+const CACHE = 'second-look-4-u-v32';
 
 async function appResponse(request) {
   const response = await fetch(request);
