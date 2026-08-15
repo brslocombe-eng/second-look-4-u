@@ -1,4 +1,4 @@
-const CACHE = 'second-look-4-u-v26';
+const CACHE = 'second-look-4-u-v27';
 
 async function appResponse(request) {
   const response = await fetch(request);
@@ -12,6 +12,18 @@ async function appResponse(request) {
   if(html.includes('</body>'))html=html.replace('</body>',inject+'</body>');else html+=inject;
   return new Response(html,{status:response.status,statusText:response.statusText,headers:response.headers});
 }
+
+async function guidedAppResponse(request) {
+  const response = await fetch(request);
+  if (!response.ok) return response;
+  const type = response.headers.get('content-type') || '';
+  if (!type.includes('text/html')) return response;
+  let html = await response.text();
+  const inject = '<script src="./sl4u-guided.js?v=1"></script>';
+  if (!html.includes('sl4u-guided.js')) html = html.includes('</body>') ? html.replace('</body>',inject+'</body>') : html+inject;
+  return new Response(html,{status:response.status,statusText:response.statusText,headers:response.headers});
+}
+
 self.addEventListener('install',event=>{event.waitUntil((async()=>{const cache=await caches.open(CACHE);try{const response=await appResponse(new Request('./index.html',{cache:'no-store'}));await cache.put('./index.html',response.clone());}catch(e){}try{await cache.add('./manifest.webmanifest')}catch(e){}})());self.skipWaiting()});
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const url=new URL(event.request.url);if(url.pathname.endsWith('/index.html')||url.pathname.endsWith('/second-look-4-u/'))event.respondWith((async()=>{try{return await appResponse(new Request(event.request.url,{method:'GET',headers:event.request.headers,cache:'no-store'}))}catch(e){return caches.match('./index.html')}})());else event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)))});
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const url=new URL(event.request.url);if(url.pathname.endsWith('/index.html')||url.pathname.endsWith('/second-look-4-u/'))event.respondWith((async()=>{try{return await appResponse(new Request(event.request.url,{method:'GET',headers:event.request.headers,cache:'no-store'}))}catch(e){return caches.match('./index.html')}})());else if(url.pathname.endsWith('/app.html'))event.respondWith((async()=>{try{return await guidedAppResponse(new Request(event.request.url,{method:'GET',headers:event.request.headers,cache:'no-store'}))}catch(e){return caches.match(event.request)}})());else event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)))});
